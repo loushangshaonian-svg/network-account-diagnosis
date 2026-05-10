@@ -1,0 +1,62 @@
+platforms:
+  xiaohongshu:
+    name: 小红书
+    search_keywords: ["笔记", "薯条", "小红书号"]
+    metrics:
+      - name: 粉丝数
+        key: followers
+      - name: 获赞与收藏
+        key: likes_total
+      - name: 笔记数
+        key: notes
+    special_metrics:
+      - name: 收藏率
+        formula: "收藏数/曝光量"
+      - name: 评论率
+        formula: "评论数/曝光量"
+    
+  douyin:
+    name: 抖音
+    search_keywords: ["抖音号", "douyin"]
+    metrics:
+      - name: 粉丝数
+        key: followers
+      - name: 获赞数
+        key: likes
+      - name: 作品数
+        key: videos
+    special_metrics:
+      - name: 完播率
+        formula: "播放完成数/总播放数"
+      - name: 涨粉率
+        formula: "新增粉丝/曝光量"
+        
+  shipinhao:
+    name: 视频号
+    search_keywords: ["视频号"]
+    metrics:
+      - name: 粉丝数
+        key: followers
+      - name: 作品数
+        key: videos
+    special_metrics:
+      - name: 转发率
+        formula: "转发数/曝光量"
+      - name: 公众号引流
+        formula: "引流到公众号数量"
+
+  gongzhonghao:
+    name: 公众号
+    search_keywords: ["公众号"]
+    metrics:
+      - name: 粉丝数
+        key: followers
+      - name: 总阅读数
+        key: total_reads
+      - name: 在看数
+        key:在看
+    special_metrics:
+      - name: 打开率
+        formula: "阅读数/粉丝数"
+      - name: 分享率
+        formula: "分享数/阅读数"

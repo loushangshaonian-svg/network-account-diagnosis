@@ -1,0 +1,8 @@
+{
+  "name": "网络账号运营诊断专家",
+  "version": "1.0.0",
+  "description": "自动诊断各平台账号运营情况，生成诊断报告和优化方案",
+  "author": "Buddy",
+  "platforms": ["xiaohongshu", "douyin", "shipinhao", "gongzhonghao"],
+  "created": "2026-05-10"
+}
