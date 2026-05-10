@@ -26,12 +26,18 @@ from src.report_generator import DiagnosisReportGenerator
 class DiagnosisSkillExecutor:
     """诊断技能执行器 - 管理完整诊断流程"""
     
-    def __init__(self):
-        """初始化执行器"""
-        self.data_fetcher = DataFetcher()
+    def __init__(self, use_real_data: bool = False):
+        """
+        初始化执行器
+        
+        Args:
+            use_real_data: 是否使用真实数据（默认False，使用模拟数据）
+        """
+        self.use_real_data = use_real_data
+        self.data_fetcher = DataFetcher(use_real_data=use_real_data)
         self.diagnosis_engine = DiagnosisEngine()
         self.report_generator = DiagnosisReportGenerator()
-        logger.info("诊断执行器初始化完成")
+        logger.info(f"诊断执行器初始化完成 (真实数据: {use_real_data})")
     
     async def execute(self, 
                      input_keyword: str, 
@@ -193,12 +199,13 @@ _executor = None
 
 async def diagnose_account(input_keyword: str,
                           platforms: Optional[List[str]] = None,
-                          is_url: bool = False) -> str:
+                          is_url: bool = False,
+                          use_real_data: bool = False) -> str:
     """
     便捷函数 - 诊断账号
     
     使用示例:
-        # 诊断所有平台
+        # 诊断所有平台（模拟数据）
         report = await diagnose_account("予茉女装")
         
         # 诊断指定平台
@@ -206,19 +213,23 @@ async def diagnose_account(input_keyword: str,
         
         # 诊断URL
         report = await diagnose_account("https://www.xiaohongshu.com/user/profile/xxx", is_url=True)
+        
+        # 使用真实数据
+        report = await diagnose_account("予茉女装", use_real_data=True)
     
     Args:
         input_keyword: 品牌名或URL
         platforms: 诊断平台列表 (可选)
         is_url: 是否为URL输入 (默认: False)
+        use_real_data: 是否使用真实数据 (默认: False)
         
     Returns:
         诊断报告 (Markdown格式)
     """
     global _executor
     
-    if _executor is None:
-        _executor = DiagnosisSkillExecutor()
+    if _executor is None or _executor.use_real_data != use_real_data:
+        _executor = DiagnosisSkillExecutor(use_real_data=use_real_data)
     
     return await _executor.execute(input_keyword, platforms, is_url)
 
@@ -256,6 +267,12 @@ def main():
         help='输出文件路径 (默认打印到控制台)',
         default=None
     )
+    parser.add_argument(
+        '--real-data',
+        help='使用真实数据（默认使用模拟数据）',
+        action='store_true',
+        default=False
+    )
     
     args = parser.parse_args()
     
@@ -271,8 +288,15 @@ def main():
     logger.info(f"诊断对象: {args.keyword}")
     if platforms:
         logger.info(f"诊断平台: {', '.join(platforms)}")
+    if args.real_data:
+        logger.info("使用真实数据模式")
     
-    report = asyncio.run(diagnose_account(args.keyword, platforms, is_url))
+    report = asyncio.run(diagnose_account(
+        args.keyword, 
+        platforms, 
+        is_url,
+        use_real_data=args.real_data
+    ))
     
     # 输出结果
     if args.output:

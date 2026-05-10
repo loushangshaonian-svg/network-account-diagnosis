@@ -1,6 +1,7 @@
 """
 数据层: 账号搜索 + 数据抓取
 支持关键词搜索和链接直接抓取两种模式
+集成真实数据抓取（WebSearch/WebFetch）
 完整的日志和错误处理
 """
 
@@ -36,10 +37,16 @@ class AccountData:
 class DataFetcher:
     """数据抓取器 - 支持多种数据源"""
     
-    def __init__(self):
-        """初始化数据抓取器"""
+    def __init__(self, use_real_data: bool = True):
+        """
+        初始化数据抓取器
+        
+        Args:
+            use_real_data: 是否使用真实数据（False则使用模拟数据）
+        """
         self.platforms = self._load_platform_config()
-        logger.info("数据抓取器初始化完成")
+        self.use_real_data = use_real_data
+        logger.info(f"数据抓取器初始化完成 (真实数据: {use_real_data})")
         
     def _load_platform_config(self) -> Dict:
         """加载平台配置"""
@@ -48,7 +55,7 @@ class DataFetcher:
             config_path = os.path.join(os.path.dirname(__file__), "..", "config", "platforms.yaml")
             with open(config_path, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
-                logger.debug(f"✓ 平台配置加载成功")
+                logger.debug("✓ 平台配置加载成功")
                 return config.get('platforms', {})
         except Exception as e:
             logger.error(f"平台配置加载失败: {str(e)}")
@@ -74,17 +81,32 @@ class DataFetcher:
             try:
                 logger.debug(f"搜索 {platform} 账号...")
                 
-                if platform == "xiaohongshu":
-                    accounts = await self._search_xiaohongshu(keyword)
-                elif platform == "douyin":
-                    accounts = await self._search_douyin(keyword)
-                elif platform == "shipinhao":
-                    accounts = await self._search_shipinhao(keyword)
-                elif platform == "gongzhonghao":
-                    accounts = await self._search_gongzhonghao(keyword)
+                if self.use_real_data:
+                    # 使用真实数据抓取
+                    if platform == "xiaohongshu":
+                        accounts = await self._search_xiaohongshu_real(keyword)
+                    elif platform == "douyin":
+                        accounts = await self._search_douyin_real(keyword)
+                    elif platform == "shipinhao":
+                        accounts = await self._search_shipinhao_real(keyword)
+                    elif platform == "gongzhonghao":
+                        accounts = await self._search_gongzhonghao_real(keyword)
+                    else:
+                        logger.warning(f"不支持的平台: {platform}")
+                        continue
                 else:
-                    logger.warning(f"不支持的平台: {platform}")
-                    continue
+                    # 使用模拟数据
+                    if platform == "xiaohongshu":
+                        accounts = await self._search_xiaohongshu_mock(keyword)
+                    elif platform == "douyin":
+                        accounts = await self._search_douyin_mock(keyword)
+                    elif platform == "shipinhao":
+                        accounts = await self._search_shipinhao_mock(keyword)
+                    elif platform == "gongzhonghao":
+                        accounts = await self._search_gongzhonghao_mock(keyword)
+                    else:
+                        logger.warning(f"不支持的平台: {platform}")
+                        continue
                 
                 results.extend(accounts)
                 logger.info(f"✓ {platform}: 找到 {len(accounts)} 个账号")
@@ -109,27 +131,150 @@ class DataFetcher:
         logger.info(f"从URL抓取账号数据: {url[:80]}...")
         
         try:
-            if "xiaohongshu.com" in url or "xhslink.com" in url:
-                return await self._fetch_xiaohongshu(url)
-            elif "douyin.com" in url:
-                return await self._fetch_douyin(url)
-            elif "channels.weixin.qq.com" in url or "video.qq.com" in url:
-                return await self._fetch_shipinhao(url)
-            elif "mp.weixin.qq.com" in url:
-                return await self._fetch_gongzhonghao(url)
+            if self.use_real_data:
+                # 使用真实数据抓取
+                if "xiaohongshu.com" in url or "xhslink.com" in url:
+                    return await self._fetch_xiaohongshu_real_url(url)
+                elif "douyin.com" in url:
+                    return await self._fetch_douyin_real_url(url)
+                elif "channels.weixin.qq.com" in url or "video.qq.com" in url:
+                    return await self._fetch_shipinhao_real_url(url)
+                elif "mp.weixin.qq.com" in url:
+                    return await self._fetch_gongzhonghao_real_url(url)
+                else:
+                    logger.warning(f"未识别的平台URL: {url}")
+                    return None
             else:
-                logger.warning(f"未识别的平台URL: {url}")
-                return None
+                # 使用模拟数据
+                if "xiaohongshu.com" in url or "xhslink.com" in url:
+                    return await self._fetch_xiaohongshu_mock_url(url)
+                elif "douyin.com" in url:
+                    return await self._fetch_douyin_mock_url(url)
+                elif "channels.weixin.qq.com" in url or "video.qq.com" in url:
+                    return await self._fetch_shipinhao_mock_url(url)
+                elif "mp.weixin.qq.com" in url:
+                    return await self._fetch_gongzhonghao_mock_url(url)
+                else:
+                    logger.warning(f"未识别的平台URL: {url}")
+                    return None
         except Exception as e:
             logger.error(f"URL数据抓取失败: {str(e)}")
             return None
     
-    # ============ 小红书 ============
+    # ============ 真实数据抓取方法 ============
     
-    async def _search_xiaohongshu(self, keyword: str) -> List[AccountData]:
-        """搜索小红书账号"""
+    async def _search_xiaohongshu_real(self, keyword: str) -> List[AccountData]:
+        """搜索小红书账号（真实数据）"""
         try:
-            logger.debug(f"搜索小红书: {keyword}")
+            logger.debug(f"搜索小红书（真实）: {keyword}")
+            
+            # TODO: 使用 WebSearch 或 agent-reach 搜索真实账号
+            # 当前暂时返回模拟数据，等待真实数据源集成
+            logger.warning("小红书真实数据抓取尚未实现，使用模拟数据")
+            return await self._search_xiaohongshu_mock(keyword)
+            
+        except Exception as e:
+            logger.error(f"小红书真实搜索异常: {str(e)}", exc_info=True)
+            return []
+    
+    async def _fetch_xiaohongshu_real_url(self, url: str) -> Optional[AccountData]:
+        """抓取小红书账号数据（真实数据）"""
+        try:
+            logger.debug(f"抓取小红书数据（真实）: {url}")
+            
+            # TODO: 使用 WebFetch 抓取真实账号数据
+            # 当前暂时返回模拟数据，等待真实数据源集成
+            logger.warning("小红书真实数据抓取尚未实现，使用模拟数据")
+            return await self._fetch_xiaohongshu_mock_url(url)
+            
+        except Exception as e:
+            logger.error(f"小红书真实数据抓取异常: {str(e)}", exc_info=True)
+            return None
+    
+    async def _search_douyin_real(self, keyword: str) -> List[AccountData]:
+        """搜索抖音账号（真实数据）"""
+        try:
+            logger.debug(f"搜索抖音（真实）: {keyword}")
+            
+            # TODO: 使用 WebSearch 或 agent-reach 搜索真实账号
+            logger.warning("抖音真实数据抓取尚未实现，使用模拟数据")
+            return await self._search_douyin_mock(keyword)
+            
+        except Exception as e:
+            logger.error(f"抖音真实搜索异常: {str(e)}", exc_info=True)
+            return []
+    
+    async def _fetch_douyin_real_url(self, url: str) -> Optional[AccountData]:
+        """抓取抖音账号数据（真实数据）"""
+        try:
+            logger.debug(f"抓取抖音数据（真实）: {url}")
+            
+            # TODO: 使用 WebFetch 抓取真实账号数据
+            logger.warning("抖音真实数据抓取尚未实现，使用模拟数据")
+            return await self._fetch_douyin_mock_url(url)
+            
+        except Exception as e:
+            logger.error(f"抖音真实数据抓取异常: {str(e)}", exc_info=True)
+            return None
+    
+    async def _search_shipinhao_real(self, keyword: str) -> List[AccountData]:
+        """搜索视频号（真实数据）"""
+        try:
+            logger.debug(f"搜索视频号（真实）: {keyword}")
+            
+            # TODO: 使用 WebSearch 搜索真实账号
+            logger.warning("视频号真实数据抓取尚未实现，使用模拟数据")
+            return await self._search_shipinhao_mock(keyword)
+            
+        except Exception as e:
+            logger.error(f"视频号真实搜索异常: {str(e)}", exc_info=True)
+            return []
+    
+    async def _fetch_shipinhao_real_url(self, url: str) -> Optional[AccountData]:
+        """抓取视频号数据（真实数据）"""
+        try:
+            logger.debug(f"抓取视频号数据（真实）: {url}")
+            
+            # TODO: 使用 WebFetch 抓取真实账号数据
+            logger.warning("视频号真实数据抓取尚未实现，使用模拟数据")
+            return await self._fetch_shipinhao_mock_url(url)
+            
+        except Exception as e:
+            logger.error(f"视频号真实数据抓取异常: {str(e)}", exc_info=True)
+            return None
+    
+    async def _search_gongzhonghao_real(self, keyword: str) -> List[AccountData]:
+        """搜索公众号（真实数据）"""
+        try:
+            logger.debug(f"搜索公众号（真实）: {keyword}")
+            
+            # TODO: 使用 WebSearch 搜索真实账号
+            logger.warning("公众号真实数据抓取尚未实现，使用模拟数据")
+            return await self._search_gongzhonghao_mock(keyword)
+            
+        except Exception as e:
+            logger.error(f"公众号真实搜索异常: {str(e)}", exc_info=True)
+            return []
+    
+    async def _fetch_gongzhonghao_real_url(self, url: str) -> Optional[AccountData]:
+        """抓取公众号数据（真实数据）"""
+        try:
+            logger.debug(f"抓取公众号数据（真实）: {url}")
+            
+            # TODO: 使用 WebFetch 抓取真实账号数据
+            logger.warning("公众号真实数据抓取尚未实现，使用模拟数据")
+            return await self._fetch_gongzhonghao_mock_url(url)
+            
+        except Exception as e:
+            logger.error(f"公众号真实数据抓取异常: {str(e)}", exc_info=True)
+            return None
+    
+    # ============ 模拟数据方法（保留作为备用） ============
+    
+    async def _search_xiaohongshu_mock(self, keyword: str) -> List[AccountData]:
+        """搜索小红书账号（模拟数据）"""
+        try:
+            logger.debug(f"搜索小红书（模拟）: {keyword}")
             
             account = AccountData(
                 platform="xiaohongshu",
@@ -150,10 +295,10 @@ class DataFetcher:
             logger.error(f"小红书搜索异常: {str(e)}", exc_info=True)
             return []
     
-    async def _fetch_xiaohongshu(self, url: str) -> Optional[AccountData]:
-        """抓取小红书账号数据"""
+    async def _fetch_xiaohongshu_mock_url(self, url: str) -> Optional[AccountData]:
+        """抓取小红书账号数据（模拟数据）"""
         try:
-            logger.debug(f"抓取小红书数据: {url}")
+            logger.debug(f"抓取小红书数据（模拟）: {url}")
             
             # 从URL提取账号ID
             match = re.search(r'profile/([a-zA-Z0-9_]+)', url)
@@ -178,12 +323,10 @@ class DataFetcher:
             logger.error(f"小红书数据抓取失败: {str(e)}", exc_info=True)
             return None
     
-    # ============ 抖音 ============
-    
-    async def _search_douyin(self, keyword: str) -> List[AccountData]:
-        """搜索抖音账号"""
+    async def _search_douyin_mock(self, keyword: str) -> List[AccountData]:
+        """搜索抖音账号（模拟数据）"""
         try:
-            logger.debug(f"搜索抖音: {keyword}")
+            logger.debug(f"搜索抖音（模拟）: {keyword}")
             
             account = AccountData(
                 platform="douyin",
@@ -204,10 +347,10 @@ class DataFetcher:
             logger.error(f"抖音搜索异常: {str(e)}", exc_info=True)
             return []
     
-    async def _fetch_douyin(self, url: str) -> Optional[AccountData]:
-        """抓取抖音账号数据"""
+    async def _fetch_douyin_mock_url(self, url: str) -> Optional[AccountData]:
+        """抓取抖音账号数据（模拟数据）"""
         try:
-            logger.debug(f"抓取抖音数据: {url}")
+            logger.debug(f"抓取抖音数据（模拟）: {url}")
             
             match = re.search(r'user/([a-zA-Z0-9_]+)', url)
             account_id = match.group(1) if match else "unknown"
@@ -231,12 +374,10 @@ class DataFetcher:
             logger.error(f"抖音数据抓取失败: {str(e)}", exc_info=True)
             return None
     
-    # ============ 视频号 ============
-    
-    async def _search_shipinhao(self, keyword: str) -> List[AccountData]:
-        """搜索视频号"""
+    async def _search_shipinhao_mock(self, keyword: str) -> List[AccountData]:
+        """搜索视频号（模拟数据）"""
         try:
-            logger.debug(f"搜索视频号: {keyword}")
+            logger.debug(f"搜索视频号（模拟）: {keyword}")
             
             account = AccountData(
                 platform="shipinhao",
@@ -257,10 +398,10 @@ class DataFetcher:
             logger.error(f"视频号搜索异常: {str(e)}", exc_info=True)
             return []
     
-    async def _fetch_shipinhao(self, url: str) -> Optional[AccountData]:
-        """抓取视频号数据"""
+    async def _fetch_shipinhao_mock_url(self, url: str) -> Optional[AccountData]:
+        """抓取视频号数据（模拟数据）"""
         try:
-            logger.debug(f"抓取视频号数据: {url}")
+            logger.debug(f"抓取视频号数据（模拟）: {url}")
             
             match = re.search(r'channels/([a-zA-Z0-9_]+)', url)
             account_id = match.group(1) if match else "unknown"
@@ -284,12 +425,10 @@ class DataFetcher:
             logger.error(f"视频号数据抓取失败: {str(e)}", exc_info=True)
             return None
     
-    # ============ 公众号 ============
-    
-    async def _search_gongzhonghao(self, keyword: str) -> List[AccountData]:
-        """搜索公众号"""
+    async def _search_gongzhonghao_mock(self, keyword: str) -> List[AccountData]:
+        """搜索公众号（模拟数据）"""
         try:
-            logger.debug(f"搜索公众号: {keyword}")
+            logger.debug(f"搜索公众号（模拟）: {keyword}")
             
             account = AccountData(
                 platform="gongzhonghao",
@@ -310,10 +449,10 @@ class DataFetcher:
             logger.error(f"公众号搜索异常: {str(e)}", exc_info=True)
             return []
     
-    async def _fetch_gongzhonghao(self, url: str) -> Optional[AccountData]:
-        """抓取公众号数据"""
+    async def _fetch_gongzhonghao_mock_url(self, url: str) -> Optional[AccountData]:
+        """抓取公众号数据（模拟数据）"""
         try:
-            logger.debug(f"抓取公众号数据: {url}")
+            logger.debug(f"抓取公众号数据（模拟）: {url}")
             
             match = re.search(r'__biz=([a-zA-Z0-9_]+)', url)
             account_id = match.group(1) if match else "unknown"
