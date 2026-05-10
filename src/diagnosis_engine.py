@@ -20,6 +20,8 @@ class DiagnosisIssue:
     target_value: float
     suggestion: str
     priority: int  # 1-5, 1最高
+    expected_impact: str = ""  # 预期效果
+    difficulty: str = ""  # 执行难度
 
 @dataclass
 class DiagnosisStrength:
@@ -101,6 +103,7 @@ class DiagnosisEngine:
         # 检查基础指标
         for key, metric in basic.items():
             if metric.status in ["warning", "critical"]:
+                severity_map = {"critical": "高", "high": "中", "medium": "低"}
                 issues.append(DiagnosisIssue(
                     category="运营",
                     severity=metric.status,
@@ -110,13 +113,16 @@ class DiagnosisEngine:
                     current_value=metric.value,
                     target_value=metric.benchmark * 1.1,  # 目标设为基准的110%
                     suggestion=self._get_metric_suggestion(platform, key, metric),
-                    priority=priority
+                    priority=priority,
+                    expected_impact=severity_map.get(metric.status, "中"),
+                    difficulty=self._get_difficulty(key)
                 ))
                 priority += 1
 
         # 检查平台特化指标
         for key, metric in platform_m.items():
             if metric.status in ["warning", "critical"]:
+                severity_map = {"critical": "高", "high": "中", "medium": "低"}
                 issues.append(DiagnosisIssue(
                     category="平台特化",
                     severity=metric.status,
@@ -126,7 +132,9 @@ class DiagnosisEngine:
                     current_value=metric.value,
                     target_value=metric.benchmark * 1.1,
                     suggestion=self._get_platform_suggestion(platform, key, metric),
-                    priority=priority
+                    priority=priority,
+                    expected_impact=severity_map.get(metric.status, "中"),
+                    difficulty=self._get_difficulty(key)
                 ))
                 priority += 1
 
@@ -182,6 +190,18 @@ class DiagnosisEngine:
         """获取平台特化指标建议"""
         # 具体建议根据平台和指标类型
         return "参考算法趋势建议优化内容"
+
+    def _get_difficulty(self, metric_key: str) -> str:
+        """获取执行难度"""
+        difficulty_map = {
+            "engagement_rate": "中",
+            "follower_growth": "高",
+            "posting_frequency": "低",
+            "save_rate": "中",
+            "comment_rate": "高",
+            "completion_rate": "高",
+        }
+        return difficulty_map.get(metric_key, "中")
 
     def _generate_summary(self, account_name: str, platform: str, issues: List, strengths: List, score: int) -> str:
         """生成诊断摘要"""

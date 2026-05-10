@@ -54,7 +54,7 @@ platforms:
       - name: 总阅读数
         key: total_reads
       - name: 在看数
-        key:在看
+        key: "在看"
     special_metrics:
       - name: 打开率
         formula: "阅读数/粉丝数"
