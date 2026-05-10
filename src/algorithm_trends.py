@@ -1,11 +1,15 @@
 """
-平台算法趋势分析
-包含各平台推荐算法变化趋势和流量分发机制
+算法趋势分析 - 各平台推荐算法变化趋势和流量分发机制
+添加完整的日志和错误处理
 """
 
 from typing import Dict, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class AlgorithmTrend:
@@ -16,6 +20,7 @@ class AlgorithmTrend:
     impact: str  # high/medium/low
     advice: str  # 应对建议
     updated_at: str
+
 
 class AlgorithmTrendAnalyzer:
     """算法趋势分析器"""
@@ -120,22 +125,64 @@ class AlgorithmTrendAnalyzer:
     }
 
     def get_trends(self, platform: str) -> List[AlgorithmTrend]:
-        """获取指定平台的算法趋势"""
-        return self.TRENDS.get(platform, [])
+        """
+        获取指定平台的算法趋势
+        
+        Args:
+            platform: 平台代码
+            
+        Returns:
+            算法趋势列表
+        """
+        try:
+            trends = self.TRENDS.get(platform, [])
+            logger.debug(f"获取 {platform} 的算法趋势: {len(trends)} 条")
+            return trends
+        except Exception as e:
+            logger.error(f"获取算法趋势异常 ({platform}): {str(e)}", exc_info=True)
+            return []
 
     def get_all_trends(self) -> Dict[str, List[AlgorithmTrend]]:
-        """获取所有平台的算法趋势"""
-        return self.TRENDS
+        """
+        获取所有平台的算法趋势
+        
+        Returns:
+            包含所有平台趋势的字典
+        """
+        try:
+            logger.debug(f"获取所有平台算法趋势: {len(self.TRENDS)} 个平台")
+            return self.TRENDS
+        except Exception as e:
+            logger.error(f"获取所有趋势异常: {str(e)}", exc_info=True)
+            return {}
 
     def generate_recommendations(self, platform: str) -> List[str]:
-        """基于算法趋势生成内容建议"""
-        trends = self.get_trends(platform)
+        """
+        基于算法趋势生成内容建议
+        
+        Args:
+            platform: 平台代码
+            
+        Returns:
+            建议列表
+        """
         recommendations = []
-
-        for trend in trends:
-            if trend.impact == "high":
-                recommendations.append(f"【重要】{trend.trend_name}: {trend.advice}")
-            else:
-                recommendations.append(f"{trend.trend_name}: {trend.advice}")
-
+        
+        try:
+            trends = self.get_trends(platform)
+            logger.debug(f"为 {platform} 生成建议")
+            
+            for trend in trends:
+                if trend.impact == "high":
+                    recommendations.append(f"【重要】{trend.trend_name}: {trend.advice}")
+                    logger.debug(f"  - 【高优先级】{trend.trend_name}")
+                else:
+                    recommendations.append(f"{trend.trend_name}: {trend.advice}")
+                    logger.debug(f"  - {trend.trend_name}")
+            
+            logger.info(f"✓ 为 {platform} 生成 {len(recommendations)} 条建议")
+            
+        except Exception as e:
+            logger.error(f"生成建议异常 ({platform}): {str(e)}", exc_info=True)
+        
         return recommendations
